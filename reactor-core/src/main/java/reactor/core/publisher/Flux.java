@@ -2035,7 +2035,7 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * @param mergedPublishers The {@link Publisher} of {@link Publisher} to switch on and mirror.
 	 * @param <T> the produced type
 	 *
-	 * @return a {@link SinkManyAbstractBase} accepting publishers and producing T
+	 * @return a {@link Flux} accepting publishers and producing T
 	 */
 	public static <T> Flux<T> switchOnNext(Publisher<? extends Publisher<? extends T>> mergedPublishers) {
 		return onAssembly(new FluxSwitchMapNoPrefetch<>(from(mergedPublishers),
@@ -2056,7 +2056,7 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * @param prefetch the inner source request size
 	 * @param <T> the produced type
 	 *
-	 * @return a {@link SinkManyAbstractBase} accepting publishers and producing T
+	 * @return a {@link Flux} accepting publishers and producing T
 	 *
 	 * @deprecated to be removed in 3.6.0 at the earliest. In 3.5.0, you should replace
 	 * calls with prefetch=0 with calls to switchOnNext(mergedPublishers), as the default
@@ -2883,6 +2883,9 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * or once this Flux completes.
 	 * <p>
 	 * <img class="marble" src="doc-files/marbles/bufferWithMaxSize.svg" alt="">
+	 * <p>
+	 * Note that if buffers provided by the bufferSupplier return {@literal false} upon invocation
+	 * of {@link Collection#add(Object)} for a given element, that element will be discarded.
 	 *
 	 * <p><strong>Discard Support:</strong> This operator discards the currently open buffer upon cancellation or error triggered by a data signal,
 	 * as well as latest unbuffered element if the bufferSupplier fails.
@@ -2946,6 +2949,10 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * When maxSize == skip : exact buffers
 	 * <p>
 	 * <img class="marble" src="doc-files/marbles/bufferWithMaxSizeEqualsSkipSize.svg" alt="">
+	 *
+	 * <p>
+	 * Note for exact buffers: If buffers provided by the bufferSupplier return {@literal false} upon invocation
+	 * of {@link Collection#add(Object)} for a given element, that element will be discarded.
 	 *
 	 * <p><strong>Discard Support:</strong> This operator discards elements in between buffers (in the case of
 	 * dropping buffers). It also discards the currently open buffer upon cancellation or error triggered by a data signal.
@@ -5925,6 +5932,15 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * with a {@code maxConcurrency} parameter that is set too low).
 	 *
 	 * <p>
+  	 * To avoid deadlock, the concurrency of the subscriber to groupBy should be 
+	 * greater than or equal to the number of groups created. In that case every group
+	 * has its own subscriber and progress can be made, even when the data publish pattern
+	 * is arbitrary. Otherwise, when the number of groups exceeds downstream concurrency,
+	 * the subscribers should be designed with caution, because if the consumption
+	 * pattern doesn't match what can be accommodated in its producer buffer,
+	 * the process may enter deadlock due to backpressure.
+	 *
+	 * <p>
 	 * Note that groups are a live view of part of the underlying source publisher,
 	 * and as such their lifecycle is tied to that source. As a result, it is not possible
 	 * to subscribe to a specific group more than once: groups are unicast.
@@ -5954,6 +5970,15 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * Notably when the criteria produces a large amount of groups, it can lead to hanging
 	 * if the groups are not suitably consumed downstream (eg. due to a {@code flatMap}
 	 * with a {@code maxConcurrency} parameter that is set too low).
+ 	 *
+	 * <p>
+	 * To avoid deadlock, the concurrency of the subscriber to groupBy should be
+	 * greater than or equal to the number of groups created. In that case every group
+	 * has its own subscriber and progress can be made, even when the data publish pattern
+	 * is arbitrary. Otherwise, when the number of groups exceeds downstream concurrency,
+	 * the subscribers should be designed with caution, because if the consumption
+	 * pattern doesn't match what can be accommodated in its producer buffer,
+	 * the process may enter deadlock due to backpressure.
 	 *
 	 * <p>
 	 * Note that groups are a live view of part of the underlying source publisher,
@@ -5987,6 +6012,15 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * Notably when the criteria produces a large amount of groups, it can lead to hanging
 	 * if the groups are not suitably consumed downstream (eg. due to a {@code flatMap}
 	 * with a {@code maxConcurrency} parameter that is set too low).
+  	 *
+	 * <p>
+	 * To avoid deadlock, the concurrency of the subscriber to groupBy should be
+	 * greater than or equal to the number of groups created. In that case every group
+	 * has its own subscriber and progress can be made, even when the data publish pattern
+	 * is arbitrary. Otherwise, when the number of groups exceeds downstream concurrency,
+	 * the subscribers should be designed with caution, because if the consumption
+	 * pattern doesn't match what can be accommodated in its producer buffer,
+	 * the process may enter deadlock due to backpressure.
 	 *
 	 * <p>
 	 * Note that groups are a live view of part of the underlying source publisher,
@@ -6023,6 +6057,15 @@ public abstract class Flux<T> implements CorePublisher<T> {
 	 * Notably when the criteria produces a large amount of groups, it can lead to hanging
 	 * if the groups are not suitably consumed downstream (eg. due to a {@code flatMap}
 	 * with a {@code maxConcurrency} parameter that is set too low).
+	 *
+	 * <p>
+	 * To avoid deadlock, the concurrency of the subscriber to groupBy should be
+	 * greater than or equal to the number of groups created. In that case every group
+	 * has its own subscriber and progress can be made, even when the data publish pattern
+	 * is arbitrary. Otherwise, when the number of groups exceeds downstream concurrency,
+	 * the subscribers should be designed with caution, because if the consumption
+	 * pattern doesn't match what can be accommodated in its producer buffer,
+	 * the process may enter deadlock due to backpressure.
 	 *
 	 * <p>
 	 * Note that groups are a live view of part of the underlying source publisher,
